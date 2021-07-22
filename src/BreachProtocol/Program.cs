@@ -34,7 +34,7 @@ namespace BreachProtocol
             FillMatrix();
             CreateSolution();
             Print();
-            BruteForce_Recursive(0, 0, 0);
+            FindSolutions_BruteForce();
             Print();
             PrintSolutions();
         }
@@ -151,6 +151,11 @@ namespace BreachProtocol
             }
 
             return result;
+        }
+
+        private static void FindSolutions_BruteForce()
+        {
+            BruteForce_Recursive(0, 0, 0);
         }
 
         private static void BruteForce_Recursive(int row, int col, int dimension)
