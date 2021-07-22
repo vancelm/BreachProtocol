@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Threading;
 
 namespace BreachProtocol
 {
@@ -8,15 +10,16 @@ namespace BreachProtocol
     {
         private static readonly ImmutableArray<byte> values = ImmutableArray.Create<byte>(0x1C, 0x55, 0xBD, 0xE9, 0xFF);
         private static readonly byte[,] matrix = new byte[4, 4];
-        private static readonly int bufferCapacity = 4;
-        private static readonly Stack<byte> buffer = new(bufferCapacity);
+        private static readonly byte[] buffer = new byte[8];
+        private static int bufferSize = 0;
+        private static readonly byte[] solution = new byte[4];
 
         static void Main(string[] args)
         {
             FillMatrix();
+            CreateSolution();
             Print();
             Recursive(0, 0, 0);
-            
         }
 
         private static byte GetRandomValue()
@@ -67,8 +70,7 @@ namespace BreachProtocol
         
         private static void Recursive(int row, int col, int dimension)
         {
-            //Thread.Sleep(100);
-            if (buffer.Count >= bufferCapacity)
+            if (bufferSize >= buffer.Length)
                 return;
 
             if (dimension == 0)
@@ -80,11 +82,13 @@ namespace BreachProtocol
             {
                 if (matrix[row, col] != 0)
                 {
-                    buffer.Push(matrix[row, col]);
+                    bufferSize++;
+                    buffer[bufferSize - 1] = matrix[row, col];
                     matrix[row, col] = 0;
                     Print();
                     Recursive(row, col, dimension ^ 1);
-                    matrix[row, col] = buffer.Pop();
+                    matrix[row, col] = buffer[bufferSize - 1];
+                    bufferSize--;
                 }
 
                 if (dimension == 0)
