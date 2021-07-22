@@ -65,15 +65,18 @@ namespace BreachProtocol
 
         private static void PrintBuffer()
         {
+            Console.WriteLine("Buffer:");
             foreach (MatrixItem item in buffer)
             {
                 Console.Write($"{item.Value:X2} ");
             }
             Console.WriteLine();
+            Console.WriteLine();
         }
 
         private static void PrintMatrix()
         {
+            Console.WriteLine("Code Matrix:");
             for (int row = 0; row < matrix.GetLength(0); row++)
             {
                 for (int col = 0; col < matrix.GetLength(1); col++)
@@ -82,16 +85,24 @@ namespace BreachProtocol
                 }
                 Console.WriteLine();
             }
+            Console.WriteLine();
         }
 
         private static void PrintSolutions()
         {
+            Console.WriteLine("Solutions:");
             foreach (MatrixItem[] sol in solutions.OrderBy(s => s.Length))
             {
-                foreach (MatrixItem item in sol)
+                for (int i = 0; i < sol.Length; i++)
                 {
-                    Console.Write($"({item.Row}, {item.Col}, {item.Value:X2}), ");
+                    Console.Write($"({sol[i].Row}, {sol[i].Col}, {sol[i].Value:X2})");
+
+                    if (i < sol.Length - 1)
+                    {
+                        Console.Write(", ");
+                    }
                 }
+
                 Console.WriteLine();
             }
         }
@@ -203,5 +214,38 @@ namespace BreachProtocol
                 }
             }
         }
+
+        //private static void FindSolutions()
+        //{
+        //    int index = solution.Length - 1;
+        //    for (int row = 0; row < matrix.GetLength(0); row++)
+        //    {
+        //        for (int col = 0; col < matrix.GetLength(1); col++)
+        //        {
+        //            if (matrix[row, col] == solution[index])
+        //            {
+        //                buffer[]
+        //                FindSolutions_Recursive(index, row, col, 0);
+        //                FindSolutions_Recursive(index, row, col, 1);
+        //            }
+        //        }
+        //    }
+        //}
+
+        //private static void FindSolutions_Recursive(int index, int row, int col, int dimension)
+        //{
+        //    if (index <= 0)
+        //    {
+        //        return;
+        //    }
+
+        //    index--;
+
+        //    while (row < matrix.GetLength(0) && col < matrix.GetLength(1))
+        //    {
+        //        if (matrix[row, col] == )
+        //    }
+
+        //}
     }
 }
