@@ -64,6 +64,9 @@ namespace BreachProtocol
         {
             if (_buffer.Count == 0)
                 throw new InvalidOperationException("The buffer is empty.");
+
+            PuzzleItem item = _buffer.Pop();
+            _matrix[item.Row, item.Column] = item.Value;
         }
 
         public void Move(int row, int column)
