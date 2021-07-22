@@ -34,7 +34,7 @@ namespace BreachProtocol
             FillMatrix();
             CreateSolution();
             Print();
-            Recursive(0, 0, 0);
+            BruteForce_Recursive(0, 0, 0);
             Print();
             PrintSolutions();
         }
@@ -153,7 +153,7 @@ namespace BreachProtocol
             return result;
         }
 
-        private static void Recursive(int row, int col, int dimension)
+        private static void BruteForce_Recursive(int row, int col, int dimension)
         {
             if (ContainsSolution())
             {
@@ -182,7 +182,7 @@ namespace BreachProtocol
                     buffer[bufferSize - 1] = new MatrixItem(row, col, matrix[row, col]);
                     matrix[row, col] = 0;
                     //Print();
-                    Recursive(row, col, dimension ^ 1);
+                    BruteForce_Recursive(row, col, dimension ^ 1);
                     matrix[row, col] = buffer[bufferSize - 1].Value;
                     buffer[bufferSize - 1] = default;
                     bufferSize--;
