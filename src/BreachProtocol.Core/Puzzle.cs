@@ -1,6 +1,9 @@
 ﻿using BreachProtocol.Collections;
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace BreachProtocol
 {
@@ -8,8 +11,9 @@ namespace BreachProtocol
     {
         public static readonly ImmutableArray<byte> ValidValues = ImmutableArray.Create<byte>(0x1C, 0x55, 0xBD, 0xE9, 0xFF);
 
-        private readonly byte[,] _matrix;
         private readonly ArrayStack<PuzzleItem> _buffer;
+        private readonly byte[,] _matrix;
+        private readonly byte[] _solution;
 
         public int BufferCapacity => _buffer.Capacity;
         public int BufferCount => _buffer.Count;
@@ -19,6 +23,24 @@ namespace BreachProtocol
         public int CurrentRow { get; private set; }
         public int CurrentColumn { get; private set; }
         public PuzzleAxis CurrentAxis { get; private set; }
+        public ReadOnlyCollection<byte> Solution { get; }
+
+        public Puzzle(int rows, int columns, int bufferCapacity, int solutionLength)
+        {
+            if (rows < 0)
+                throw new ArgumentOutOfRangeException(nameof(rows));
+            if (columns < 0)
+                throw new ArgumentOutOfRangeException(nameof(columns));
+            if (bufferCapacity < 0)
+                throw new ArgumentOutOfRangeException(nameof(bufferCapacity));
+            if (solutionLength < 0 || solutionLength > bufferCapacity)
+                throw new ArgumentOutOfRangeException(nameof(solutionLength));
+
+            _buffer = new(bufferCapacity);
+            _matrix = new byte[rows, columns];
+            _solution = new byte[solutionLength];
+            Solution = new ReadOnlyCollection<byte>(_solution);
+        }
 
         public byte GetBufferValue(int index)
         {
@@ -38,21 +60,7 @@ namespace BreachProtocol
             return _matrix[row, column];
         }
 
-        public Puzzle(int rows, int columns, int bufferCapacity)
-        {
-            if (rows < 0)
-                throw new ArgumentOutOfRangeException(nameof(rows));
-            if (columns < 0)
-                throw new ArgumentOutOfRangeException(nameof(columns));
-            if (bufferCapacity < 0)
-                throw new ArgumentOutOfRangeException(nameof(bufferCapacity));
-
-            _matrix = new byte[rows, columns];
-            _buffer = new(bufferCapacity);
-            SwitchAxis();
-        }
-
-        public void Push()
+        public bool Push()
         {
             if (_buffer.Count == _buffer.Capacity)
                 throw new InvalidOperationException("The buffer is full.");
@@ -61,7 +69,9 @@ namespace BreachProtocol
 
             _buffer.Push(new PuzzleItem(CurrentRow, CurrentColumn, _matrix[CurrentRow, CurrentColumn]));
             _matrix[CurrentRow, CurrentColumn] = 0;
-            SwitchAxis();
+            CurrentAxis = SwitchAxis(CurrentAxis);
+
+            return ContainsSolution();
         }
 
         public void Pop()
@@ -71,6 +81,7 @@ namespace BreachProtocol
 
             PuzzleItem item = _buffer.Pop();
             _matrix[item.Row, item.Column] = item.Value;
+            CurrentAxis = SwitchAxis(CurrentAxis);
         }
 
         public void Move(int row, int column)
@@ -90,8 +101,9 @@ namespace BreachProtocol
 
         public void Initialize()
         {
-            FillMatrix();
             _buffer.Clear();
+            FillMatrix();
+            CreateSolution();
 
             CurrentRow = 0;
             CurrentColumn = 0;
@@ -101,26 +113,79 @@ namespace BreachProtocol
         private void FillMatrix()
         {
             for (int row = 0; row < MatrixRows; row++)
-            {
                 for (int col = 0; col < MatrixColumns; col++)
-                {
                     _matrix[row, col] = GetRandomValue();
-                }
-            }
         }
 
-        private void SwitchAxis()
+        private static PuzzleAxis SwitchAxis(PuzzleAxis axis)
         {
-            if (CurrentAxis == PuzzleAxis.Horizontal)
-                CurrentAxis = PuzzleAxis.Vertical;
+            if (axis == PuzzleAxis.Horizontal)
+                return PuzzleAxis.Vertical;
             else
-                CurrentAxis = PuzzleAxis.Horizontal;
+                return PuzzleAxis.Horizontal;
         }
 
-        private static byte GetRandomValue()
+        private byte GetRandomValue()
         {
             int index = Random.Shared.Next(ValidValues.Length);
             return ValidValues[index];
+        }
+
+        private void CreateSolution()
+        {
+            byte[,] matrix = new byte[MatrixRows, MatrixColumns];
+            Array.Copy(_matrix, matrix, matrix.Length);
+
+            byte[] fullSolution = new byte[BufferCapacity];
+            int row = 0;
+            int col = 0;
+            PuzzleAxis axis = PuzzleAxis.Horizontal;
+
+            for (int i = 0; i < fullSolution.Length; i++)
+            {
+                do
+                {
+                    if (axis == PuzzleAxis.Horizontal)
+                    {
+                        col = Random.Shared.Next(MatrixColumns);
+                    }
+                    else
+                    {
+                        row = Random.Shared.Next(MatrixRows);
+                    }
+                } while (matrix[row, col] == 0);
+
+                fullSolution[i] = matrix[row, col];
+                matrix[row, col] = 0;
+                axis = SwitchAxis(axis);
+            }
+
+            Array.Copy(fullSolution, Random.Shared.Next(fullSolution.Length - _solution.Length), _solution, 0, _solution.Length);
+        }
+
+        private bool ContainsSolution()
+        {
+            bool result = false;
+
+            for (int i = 0; i < _buffer.Count - _solution.Length; i++)
+            {
+                result = true;
+                for (int j = 0; j < _solution.Length; j++)
+                {
+                    if (_buffer[i + j].Value != _solution[j])
+                    {
+                        result = false;
+                        break;
+                    }
+                }
+
+                if (result)
+                {
+                    break;
+                }
+            }
+
+            return result;
         }
     }
 }
