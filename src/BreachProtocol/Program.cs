@@ -100,6 +100,30 @@ namespace BreachProtocol
             Array.Copy(fullSolution, Random.Shared.Next(fullSolution.Length - solution.Length), solution, 0, solution.Length);
         }
 
+        private static bool ContainsSolution()
+        {
+            bool result = false;
+            for (int i = 0; i < buffer.Length - solution.Length; i++)
+            {
+                result = true;
+                for (int j = 0; j < solution.Length; j++)
+                {
+                    if (buffer[i + j] != solution[j])
+                    {
+                        result = false;
+                        break;
+                    }
+                }
+
+                if (result)
+                {
+                    break;
+                }
+            }
+
+            return result;
+        }
+
         private static void Recursive(int row, int col, int dimension)
         {
             if (bufferSize >= buffer.Length)
