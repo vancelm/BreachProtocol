@@ -86,7 +86,7 @@ namespace BreachProtocol
 
         private static void PrintSolutions()
         {
-            foreach (MatrixItem[] sol in solutions)
+            foreach (MatrixItem[] sol in solutions.OrderBy(s => s.Length))
             {
                 foreach (MatrixItem item in sol)
                 {
