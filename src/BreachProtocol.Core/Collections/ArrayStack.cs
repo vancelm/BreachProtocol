@@ -91,6 +91,15 @@ namespace BreachProtocol.Collections
         }
 
         /// <summary>
+        /// Removes all elements from the <see cref="ArrayStack{T}"/>.
+        /// </summary>
+        public void Clear()
+        {
+            Array.Clear(_array, 0, _array.Length);
+            Count = 0;
+        }
+
+        /// <summary>
         /// Returns an enumerator for the <see cref="ArrayStack{T}"/>.
         /// </summary>
         /// <returns>An <see cref="IEnumerator{T}"/> for the <see cref="ArrayStack{T}"/>.</returns>
