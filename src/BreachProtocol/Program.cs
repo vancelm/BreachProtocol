@@ -67,7 +67,39 @@ namespace BreachProtocol
                 Console.WriteLine();
             }
         }
-        
+
+        private static void CreateSolution()
+        {
+            byte[,] tempMatrix = new byte[matrix.GetLength(0), matrix.GetLength(1)];
+            Array.Copy(matrix, tempMatrix, matrix.Length);
+
+            byte[] fullSolution = new byte[buffer.Length];
+            int row = 0;
+            int col = 0;
+            int dimension = 0;
+
+            for (int i = 0; i < fullSolution.Length; i++)
+            {
+                do
+                {
+                    if (dimension == 0)
+                    {
+                        col = Random.Shared.Next(tempMatrix.GetLength(1));
+                    }
+                    else
+                    {
+                        row = Random.Shared.Next(tempMatrix.GetLength(0));
+                    }
+                } while (tempMatrix[row, col] == 0);
+
+                fullSolution[i] = tempMatrix[row, col];
+                tempMatrix[row, col] = 0;
+                dimension ^= 1;
+            }
+
+            Array.Copy(fullSolution, Random.Shared.Next(fullSolution.Length - solution.Length), solution, 0, solution.Length);
+        }
+
         private static void Recursive(int row, int col, int dimension)
         {
             if (bufferSize >= buffer.Length)
