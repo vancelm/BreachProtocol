@@ -23,8 +23,8 @@ namespace BreachProtocol
         }
 
         private static readonly ImmutableArray<byte> values = ImmutableArray.Create<byte>(0x1C, 0x55, 0xBD, 0xE9, 0xFF);
-        private static readonly byte[,] matrix = new byte[4, 4];
-        private static readonly MatrixItem[] buffer = new MatrixItem[8];
+        private static readonly byte[,] matrix = new byte[6, 6];
+        private static readonly MatrixItem[] buffer = new MatrixItem[6];
         private static int bufferSize = 0;
         private static readonly byte[] solution = new byte[4];
         private static readonly List<MatrixItem[]> solutions = new();
@@ -69,7 +69,6 @@ namespace BreachProtocol
             {
                 Console.Write($"{item.Value:X2} ");
             }
-            Console.Write("  ");
             Console.WriteLine();
         }
 
@@ -182,7 +181,7 @@ namespace BreachProtocol
                     bufferSize++;
                     buffer[bufferSize - 1] = new MatrixItem(row, col, matrix[row, col]);
                     matrix[row, col] = 0;
-                    Print();
+                    //Print();
                     Recursive(row, col, dimension ^ 1);
                     matrix[row, col] = buffer[bufferSize - 1].Value;
                     buffer[bufferSize - 1] = default;
