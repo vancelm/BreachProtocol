@@ -46,7 +46,7 @@ namespace BreachProtocol
 
             _matrix = new byte[rows, columns];
             _buffer = new(bufferCapacity);
-            ChangeDirection();
+            SwitchAxis();
         }
 
         public void Push()
@@ -58,7 +58,7 @@ namespace BreachProtocol
 
             _buffer.Push(new PuzzleItem(CurrentRow, CurrentColumn, _matrix[CurrentRow, CurrentColumn]));
             _matrix[CurrentRow, CurrentColumn] = 0;
-            ChangeDirection();
+            SwitchAxis();
         }
 
         public void Pop()
@@ -85,7 +85,7 @@ namespace BreachProtocol
             CurrentColumn = column;
         }
 
-        private void ChangeDirection()
+        private void SwitchAxis()
         {
             if (CurrentAxis == PuzzleAxis.Horizontal)
                 CurrentAxis = PuzzleAxis.Vertical;
