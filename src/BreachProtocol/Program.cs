@@ -8,11 +8,26 @@ namespace BreachProtocol
 {
     class Program
     {
+        private struct MatrixItem
+        {
+            public readonly int Row;
+            public readonly int Col;
+            public readonly byte Value;
+
+            public MatrixItem(int row, int col, byte value)
+            {
+                Row = row;
+                Col = col;
+                Value = value;
+            }
+        }
+
         private static readonly ImmutableArray<byte> values = ImmutableArray.Create<byte>(0x1C, 0x55, 0xBD, 0xE9, 0xFF);
         private static readonly byte[,] matrix = new byte[4, 4];
-        private static readonly byte[] buffer = new byte[8];
+        private static readonly MatrixItem[] buffer = new MatrixItem[8];
         private static int bufferSize = 0;
         private static readonly byte[] solution = new byte[4];
+        private static readonly List<MatrixItem[]> solutions = new();
 
         static void Main(string[] args)
         {
@@ -20,6 +35,8 @@ namespace BreachProtocol
             CreateSolution();
             Print();
             Recursive(0, 0, 0);
+            Print();
+            PrintSolutions();
         }
 
         private static byte GetRandomValue()
@@ -48,9 +65,9 @@ namespace BreachProtocol
 
         private static void PrintBuffer()
         {
-            foreach (byte value in buffer)
+            foreach (MatrixItem item in buffer)
             {
-                Console.Write($"{value:X2} ");
+                Console.Write($"{item.Value:X2} ");
             }
             Console.Write("  ");
             Console.WriteLine();
@@ -63,6 +80,18 @@ namespace BreachProtocol
                 for (int col = 0; col < matrix.GetLength(1); col++)
                 {
                     Console.Write($"{matrix[row, col]:X2} ");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        private static void PrintSolutions()
+        {
+            foreach (MatrixItem[] sol in solutions)
+            {
+                foreach (MatrixItem item in sol)
+                {
+                    Console.Write($"({item.Row}, {item.Col}, {item.Value:X2}), ");
                 }
                 Console.WriteLine();
             }
@@ -103,12 +132,13 @@ namespace BreachProtocol
         private static bool ContainsSolution()
         {
             bool result = false;
+
             for (int i = 0; i < buffer.Length - solution.Length; i++)
             {
                 result = true;
                 for (int j = 0; j < solution.Length; j++)
                 {
-                    if (buffer[i + j] != solution[j])
+                    if (buffer[i + j].Value != solution[j])
                     {
                         result = false;
                         break;
@@ -126,31 +156,47 @@ namespace BreachProtocol
 
         private static void Recursive(int row, int col, int dimension)
         {
+            if (ContainsSolution())
+            {
+                solutions.Add(buffer.Take(bufferSize).ToArray());
+            }
+
             if (bufferSize >= buffer.Length)
+            {
                 return;
+            }
 
             if (dimension == 0)
+            {
                 col = 0;
+            }
             else
+            {
                 row = 0;
+            }
 
             while (row < matrix.GetLength(0) && col < matrix.GetLength(1))
             {
                 if (matrix[row, col] != 0)
                 {
                     bufferSize++;
-                    buffer[bufferSize - 1] = matrix[row, col];
+                    buffer[bufferSize - 1] = new MatrixItem(row, col, matrix[row, col]);
                     matrix[row, col] = 0;
                     Print();
                     Recursive(row, col, dimension ^ 1);
-                    matrix[row, col] = buffer[bufferSize - 1];
+                    matrix[row, col] = buffer[bufferSize - 1].Value;
+                    buffer[bufferSize - 1] = default;
                     bufferSize--;
                 }
 
                 if (dimension == 0)
+                {
                     col++;
+                }
                 else
+                {
                     row++;
+                }
             }
         }
     }
