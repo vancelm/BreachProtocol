@@ -6,7 +6,7 @@ namespace BreachProtocol
     public class Puzzle
     {
         private readonly byte[,] _matrix;
-        private readonly ArrayStack<byte> _buffer;
+        private readonly ArrayStack<PuzzleItem> _buffer;
 
         public int BufferCapacity => _buffer.Capacity;
         public int BufferCount => _buffer.Count;
@@ -23,7 +23,7 @@ namespace BreachProtocol
             if (index < 0 || index >= _buffer.Count)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
-            return _buffer[index];
+            return _buffer[index].Value;
         }
 
         public byte GetMatrixValue(int row, int column)
@@ -56,7 +56,7 @@ namespace BreachProtocol
             if (_matrix[CurrentRow, CurrentColumn] == 0)
                 throw new InvalidOperationException("The specified location is already used.");
 
-            _buffer.Push(_matrix[CurrentRow, CurrentColumn]);
+            _buffer.Push(new PuzzleItem(CurrentRow, CurrentColumn, _matrix[CurrentRow, CurrentColumn]));
             _matrix[CurrentRow, CurrentColumn] = 0;
         }
 
