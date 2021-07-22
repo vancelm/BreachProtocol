@@ -13,7 +13,6 @@ namespace BreachProtocol
         public int MatrixCount => _matrix.Length;
         public int MatrixRows => _matrix.GetLength(0);
         public int MatrixColumns => _matrix.GetLength(1);
-
         public int CurrentRow { get; private set; }
         public int CurrentColumn { get; private set; }
         public PuzzleAxis CurrentAxis { get; private set; }
@@ -47,6 +46,7 @@ namespace BreachProtocol
 
             _matrix = new byte[rows, columns];
             _buffer = new(bufferCapacity);
+            ChangeDirection();
         }
 
         public void Push()
@@ -58,6 +58,7 @@ namespace BreachProtocol
 
             _buffer.Push(new PuzzleItem(CurrentRow, CurrentColumn, _matrix[CurrentRow, CurrentColumn]));
             _matrix[CurrentRow, CurrentColumn] = 0;
+            ChangeDirection();
         }
 
         public void Pop()
