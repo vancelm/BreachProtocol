@@ -1,10 +1,13 @@
 ﻿using BreachProtocol.Collections;
 using System;
+using System.Collections.Immutable;
 
 namespace BreachProtocol
 {
     public class Puzzle
     {
+        public static readonly ImmutableArray<byte> ValidValues = ImmutableArray.Create<byte>(0x1C, 0x55, 0xBD, 0xE9, 0xFF);
+
         private readonly byte[,] _matrix;
         private readonly ArrayStack<PuzzleItem> _buffer;
 
@@ -85,12 +88,39 @@ namespace BreachProtocol
             CurrentColumn = column;
         }
 
+        public void Initialize()
+        {
+            FillMatrix();
+            _buffer.Clear();
+
+            CurrentRow = 0;
+            CurrentColumn = 0;
+            CurrentAxis = PuzzleAxis.Horizontal;
+        }
+
+        private void FillMatrix()
+        {
+            for (int row = 0; row < MatrixRows; row++)
+            {
+                for (int col = 0; col < MatrixColumns; col++)
+                {
+                    _matrix[row, col] = GetRandomValue();
+                }
+            }
+        }
+
         private void SwitchAxis()
         {
             if (CurrentAxis == PuzzleAxis.Horizontal)
                 CurrentAxis = PuzzleAxis.Vertical;
             else
                 CurrentAxis = PuzzleAxis.Horizontal;
+        }
+
+        private static byte GetRandomValue()
+        {
+            int index = Random.Shared.Next(ValidValues.Length);
+            return ValidValues[index];
         }
     }
 }
