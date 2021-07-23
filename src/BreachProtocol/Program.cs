@@ -1,25 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Threading;
 
 namespace BreachProtocol
 {
     internal static class Program
     {
-        private static Puzzle puzzle;
-
         private static void Main(string[] args)
         {
-            PlayGame();
+            string mode = args.Length > 0 ? args[0].ToLowerInvariant() : "play";
+
+            switch (mode)
+            {
+                case "play":
+                    PlayGame();
+                    break;
+                case "test":
+                    TestAlgorithms();
+                    break;
+                default:
+                    break;
+            }
         }
 
         private static void PlayGame()
         {
-            puzzle = new Puzzle(8, 8, 8, 4);
+            Puzzle puzzle = new Puzzle(8, 8, 8, 4);
             puzzle.Initialize();
-            Print();
+            PrintPuzzle(puzzle);
 
             while (true)
             {
@@ -51,11 +57,11 @@ namespace BreachProtocol
                         if (puzzle.GetMatrixValue(puzzle.CurrentRow, puzzle.CurrentColumn) != 0)
                         {
                             bool isWinner = puzzle.Push();
-                            Print();
+                            PrintPuzzle(puzzle);
 
                             if (isWinner)
                             {
-                                PlayerWins();
+                                PlayerWins(puzzle);
                                 return;
                             }
                         }
@@ -64,7 +70,7 @@ namespace BreachProtocol
                         if (puzzle.BufferCount > 0)
                         {
                             puzzle.Pop();
-                            Print();
+                            PrintPuzzle(puzzle);
                         }
                         break;
                     case ConsoleKey.Escape:
@@ -73,11 +79,11 @@ namespace BreachProtocol
                         break;
                 }
 
-                SetCursorPosition();
+                SetCursorPosition(puzzle);
             }
         }
 
-        private static void PlayerWins()
+        private static void PlayerWins(Puzzle puzzle)
         {
             Console.SetCursorPosition(0, puzzle.MatrixRows + 1);
             Console.WriteLine("*********************************");
@@ -85,20 +91,20 @@ namespace BreachProtocol
             Console.WriteLine("*********************************");
         }
 
-        private static void SetCursorPosition()
+        private static void SetCursorPosition(Puzzle puzzle)
         {
             Console.SetCursorPosition(puzzle.CurrentColumn * 3, puzzle.CurrentRow);
         }
 
-        private static void Print()
+        private static void PrintPuzzle(Puzzle puzzle)
         {
-            PrintMatrix();
-            PrintBuffer();
-            PrintSolution();
-            SetCursorPosition();
+            PrintMatrix(puzzle);
+            PrintBuffer(puzzle);
+            PrintSolution(puzzle);
+            SetCursorPosition(puzzle);
         }
 
-        private static void PrintSolution()
+        private static void PrintSolution(Puzzle puzzle)
         {
             Console.SetCursorPosition(puzzle.MatrixColumns * 3 + 1, 2);
             Console.Write("Sequence: ");
@@ -108,7 +114,7 @@ namespace BreachProtocol
             }
         }
 
-        private static void PrintBuffer()
+        private static void PrintBuffer(Puzzle puzzle)
         {
             Console.SetCursorPosition(puzzle.MatrixColumns * 3 + 1, 0);
             Console.Write("Buffer: ");
@@ -121,7 +127,7 @@ namespace BreachProtocol
             }
         }
 
-        private static void PrintMatrix()
+        private static void PrintMatrix(Puzzle puzzle)
         {
             Console.SetCursorPosition(0, 0);
             for (int row = 0; row < puzzle.MatrixRows; row++)
@@ -157,6 +163,13 @@ namespace BreachProtocol
             }
             Console.ForegroundColor = ConsoleColor.White;
         }
+
+        private static void TestAlgorithms()
+        {
+
+        }
+
+
 
         //private static void PrintSolutions()
         //{
