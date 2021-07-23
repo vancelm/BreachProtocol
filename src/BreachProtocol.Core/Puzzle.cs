@@ -10,6 +10,8 @@ namespace BreachProtocol
     /// </summary>
     public class Puzzle
     {
+        private static readonly Random random = new();
+
         /// <summary>
         /// Contains all possible values used within the puzzle.
         /// </summary>
@@ -212,7 +214,7 @@ namespace BreachProtocol
 
         private byte GetRandomValue()
         {
-            int index = Random.Shared.Next(ValidValues.Length);
+            int index = random.Next(ValidValues.Length);
             return ValidValues[index];
         }
 
@@ -231,9 +233,9 @@ namespace BreachProtocol
                 do
                 {
                     if (axis == PuzzleAxis.Horizontal)
-                        col = Random.Shared.Next(MatrixColumns);
+                        col = random.Next(MatrixColumns);
                     else
-                        row = Random.Shared.Next(MatrixRows);
+                        row = random.Next(MatrixRows);
                 } while (matrix[row, col] == 0);
 
                 fullSequence[i] = matrix[row, col];
@@ -241,7 +243,7 @@ namespace BreachProtocol
                 axis = SwitchAxis(axis);
             }
 
-            Array.Copy(fullSequence, Random.Shared.Next(fullSequence.Length - _sequence.Length), _sequence, 0, _sequence.Length);
+            Array.Copy(fullSequence, random.Next(fullSequence.Length - _sequence.Length), _sequence, 0, _sequence.Length);
         }
 
         private bool IsSolved()
