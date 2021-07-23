@@ -1,30 +1,76 @@
 ﻿using BreachProtocol.Collections;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace BreachProtocol
 {
+    /// <summary>
+    /// Represents a Breach Protocol puzzle.
+    /// </summary>
     public class Puzzle
     {
+        /// <summary>
+        /// Contains all possible values used within the puzzle.
+        /// </summary>
         public static readonly ImmutableArray<byte> ValidValues = ImmutableArray.Create<byte>(0x1C, 0x55, 0xBD, 0xE9, 0xFF);
 
         private readonly ArrayStack<PuzzleItem> _buffer;
         private readonly byte[,] _matrix;
         private readonly byte[] _solution;
 
+        /// <summary>
+        /// Gets the maximum number of elements that can be stored in the buffer.
+        /// </summary>
         public int BufferCapacity => _buffer.Capacity;
-        public int BufferCount => _buffer.Count;
-        public int MatrixCount => _matrix.Length;
-        public int MatrixRows => _matrix.GetLength(0);
-        public int MatrixColumns => _matrix.GetLength(1);
-        public int CurrentRow { get; private set; }
-        public int CurrentColumn { get; private set; }
-        public PuzzleAxis CurrentAxis { get; private set; }
-        public ReadOnlyCollection<byte> Solution { get; }
 
+        /// <summary>
+        /// Gets the current number of elements stored in the buffer.
+        /// </summary>
+        public int BufferCount => _buffer.Count;
+
+        /// <summary>
+        /// Gets the total number of positions in the matrix.
+        /// </summary>
+        public int MatrixCount => _matrix.Length;
+
+        /// <summary>
+        /// Gets the number of rows in the matrix.
+        /// </summary>
+        public int MatrixRows => _matrix.GetLength(0);
+
+        /// <summary>
+        /// Gets the number of columns in the matrix.
+        /// </summary>
+        public int MatrixColumns => _matrix.GetLength(1);
+
+        /// <summary>
+        /// Gets the currently selected row in the matrix.
+        /// </summary>
+        public int CurrentRow { get; private set; }
+
+        /// <summary>
+        /// Gets the currently selected column in the matrix.
+        /// </summary>
+        public int CurrentColumn { get; private set; }
+
+        /// <summary>
+        /// Gets the current axis of the matrix.
+        /// </summary>
+        public PuzzleAxis CurrentAxis { get; private set; }
+
+        /// <summary>
+        /// Gets the current winning sequence that must be found.
+        /// </summary>
+        public ReadOnlyCollection<byte> Sequence { get; }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="Puzzle"/>.
+        /// </summary>
+        /// <param name="rows">The number or rows in the matrix.</param>
+        /// <param name="columns">The number of columns in the matrix.</param>
+        /// <param name="bufferCapacity">The capacity of the buffer.</param>
+        /// <param name="solutionLength">The length of the solution.</param>
         public Puzzle(int rows, int columns, int bufferCapacity, int solutionLength)
         {
             if (rows < 0)
@@ -39,9 +85,14 @@ namespace BreachProtocol
             _buffer = new(bufferCapacity);
             _matrix = new byte[rows, columns];
             _solution = new byte[solutionLength];
-            Solution = new ReadOnlyCollection<byte>(_solution);
+            Sequence = new ReadOnlyCollection<byte>(_solution);
         }
 
+        /// <summary>
+        /// Gets the value in the buffer at the specified index.
+        /// </summary>
+        /// <param name="index">The index of the value to get.</param>
+        /// <returns>The value at the specified index.</returns>
         public byte GetBufferValue(int index)
         {
             if (index < 0 || index >= _buffer.Count)
@@ -50,6 +101,12 @@ namespace BreachProtocol
             return _buffer[index].Value;
         }
 
+        /// <summary>
+        /// Gets the value in the matrix at the specified row and column.
+        /// </summary>
+        /// <param name="row">The row of the value to get.</param>
+        /// <param name="column">The column of the value to get.</param>
+        /// <returns>The value at the specified row and column.</returns>
         public byte GetMatrixValue(int row, int column)
         {
             if (row < 0 || row > _matrix.GetLength(0))
@@ -60,6 +117,10 @@ namespace BreachProtocol
             return _matrix[row, column];
         }
 
+        /// <summary>
+        /// Removes a value from the matrix at the current row and column and pushes it onto the buffer.
+        /// </summary>
+        /// <returns>Returns true if the buffer contains the solution. Otherwise returns false.</returns>
         public bool Push()
         {
             if (_buffer.Count == _buffer.Capacity)
@@ -74,6 +135,10 @@ namespace BreachProtocol
             return ContainsSolution();
         }
 
+        /// <summary>
+        /// Pops the last value from the buffer, stores it back in the matrix, and sets the current row and
+        /// column to match the position of the value. This is effectively an "undo".
+        /// </summary>
         public void Pop()
         {
             if (_buffer.Count == 0)
@@ -86,6 +151,12 @@ namespace BreachProtocol
             CurrentAxis = SwitchAxis(CurrentAxis);
         }
 
+        /// <summary>
+        /// Moves the current row or column to the specified row or column. A row can only be changed if the
+        /// current axis is vertical, and a column can only be changed if the current axis is horizontal.
+        /// </summary>
+        /// <param name="row">The new row.</param>
+        /// <param name="column">The new column</param>
         public void Move(int row, int column)
         {
             if (CurrentAxis == PuzzleAxis.Horizontal && row != CurrentRow)
@@ -101,6 +172,10 @@ namespace BreachProtocol
             CurrentColumn = column;
         }
 
+        /// <summary>
+        /// Initializes the puzzle with a random matrix, clears the buffer, generates a new solution, resets
+        /// the current row and column to zero, and resets the axis to horizontal.
+        /// </summary>
         public void Initialize()
         {
             _buffer.Clear();
@@ -148,13 +223,9 @@ namespace BreachProtocol
                 do
                 {
                     if (axis == PuzzleAxis.Horizontal)
-                    {
                         col = Random.Shared.Next(MatrixColumns);
-                    }
                     else
-                    {
                         row = Random.Shared.Next(MatrixRows);
-                    }
                 } while (matrix[row, col] == 0);
 
                 fullSolution[i] = matrix[row, col];
@@ -167,8 +238,12 @@ namespace BreachProtocol
 
         private bool ContainsSolution()
         {
-            bool result = false;
+            // Short cirtcuit since there's no way for the buffer to contain the solution sequence if it
+            // doesn't have enough items.
+            if (_solution.Length < _buffer.Count)
+                return false;
 
+            bool result = false;
             for (int i = 0; i <= _buffer.Count - _solution.Length; i++)
             {
                 result = true;
@@ -182,9 +257,7 @@ namespace BreachProtocol
                 }
 
                 if (result)
-                {
                     break;
-                }
             }
 
             return result;
