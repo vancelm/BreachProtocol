@@ -81,6 +81,8 @@ namespace BreachProtocol
 
             PuzzleItem item = _buffer.Pop();
             _matrix[item.Row, item.Column] = item.Value;
+            CurrentRow = item.Row;
+            CurrentColumn = item.Column;
             CurrentAxis = SwitchAxis(CurrentAxis);
         }
 
