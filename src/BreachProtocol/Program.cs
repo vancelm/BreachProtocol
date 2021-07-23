@@ -181,6 +181,7 @@ namespace BreachProtocol
         private static void TestAlgorithms()
         {
             Console.Clear();
+            Console.WriteLine("Size,    Total1,    Min1,    Max1,    Avg1,    Total2,    Min2,    Max2,    Avg2");
 
             int iterations = 100;
 
@@ -216,8 +217,8 @@ namespace BreachProtocol
 
                 double avgElapsed1 = totalElapsed1 / iterations;
                 double avgElapsed2 = totalElapsed2 / iterations;
-                Console.Write($"{size,2}, {totalElapsed1,8:0.00}, {minElapsed1,8:0.00}, {maxElapsed1,8:0.00}, {avgElapsed1,8:0.00}, ");
-                Console.WriteLine($"{totalElapsed2,8:0.00}, {minElapsed2,8:0.00}, {maxElapsed2,8:0.00}, {avgElapsed2,8:0.00}");
+                Console.Write($"{size,4},{totalElapsed1,10:0.00},{minElapsed1,8:0.00},{maxElapsed1,8:0.00},{avgElapsed1,8:0.00},");
+                Console.WriteLine($"{totalElapsed2,10:0.00},{minElapsed2,8:0.00},{maxElapsed2,8:0.00},{avgElapsed2,8:0.00}");
             }
         }
 
@@ -288,14 +289,13 @@ namespace BreachProtocol
                     puzzle.Move(puzzle.CurrentRow + 1, puzzle.CurrentColumn);
             }
 
-            // Now we have to dig deeper so exclude 0's and also sequence value since we already checked those
-            // We only do this if we haven't already found the start of the sequence
-
             if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
                 puzzle.Move(puzzle.CurrentRow, 0);
             else
                 puzzle.Move(0, puzzle.CurrentColumn);
 
+            // Now we have to dig deeper so exclude 0's and also sequence value since we already checked those
+            // We only do this if we haven't already found the start of the sequence
             if (index == 0)
             {
                 while (puzzle.CurrentRow < puzzle.MatrixRows && puzzle.CurrentColumn < puzzle.MatrixColumns)
@@ -304,7 +304,7 @@ namespace BreachProtocol
                     if (value != 0 && value != puzzle.Sequence[index])
                     {
                         if (puzzle.Push())
-                            return true; // Won't happen lol
+                            return true; // Won't happen ;)
                         if (Solve_BetterButUgly(puzzle, index))
                             return true; // This can still happen
                         puzzle.Pop();
