@@ -7,14 +7,14 @@ namespace BreachProtocol
     {
         private static void Main(string[] args)
         {
-            string mode = args.Length > 0 ? args[0].ToLowerInvariant() : "play";
-
-            switch (mode)
+            PrintMenu();
+            ConsoleKey key = Console.ReadKey(true).Key;
+            switch (key)
             {
-                case "play":
+                case ConsoleKey.D1:
                     PlayGame();
                     break;
-                case "test":
+                case ConsoleKey.D2:
                     TestAlgorithms();
                     break;
                 default:
@@ -31,6 +31,7 @@ namespace BreachProtocol
 
         private static void PlayGame(Puzzle puzzle)
         {
+            Console.Clear();
             PrintPuzzle(puzzle);
 
             bool solved = false;
@@ -179,9 +180,11 @@ namespace BreachProtocol
 
         private static void TestAlgorithms()
         {
+            Console.Clear();
+
             int iterations = 100;
 
-            for (int size = 2; size < 20; size++)
+            for (int size = 2; size < 15; size++)
             {
                 Puzzle puzzle = new(size, size, size, size / 2);
                 double totalElapsed1 = 0;
@@ -315,6 +318,33 @@ namespace BreachProtocol
             }
 
             return false;
+        }
+
+        private static void PrintMenu()
+        {
+            Console.Clear();
+            Console.WriteLine(@"__________                              .__      __________                __                      .__   ");
+            Console.WriteLine(@"\______   \_______   ____ _____    ____ |  |__   \______   \_______  _____/  |_  ____   ____  ____ |  |  ");
+            Console.WriteLine(@" |    |  _/\_  __ \_/ __ \\__  \ _/ ___\|  |  \   |     ___/\_  __ \/  _ \   __\/  _ \_/ ___\/  _ \|  |  ");
+            Console.WriteLine(@" |    |   \ |  | \/\  ___/ / __ \\  \___|   Y  \  |    |     |  | \(  <_> )  | (  <_> )  \__(  <_> )  |__");
+            Console.WriteLine(@" |______  / |__|    \___  >____  /\___  >___|  /  |____|     |__|   \____/|__|  \____/ \___  >____/|____/");
+            Console.WriteLine(@"        \/              \/     \/     \/     \/                                            \/            ");
+            Console.WriteLine();
+            Console.WriteLine("Breach Protocol is adapted from the hacking minigame in the game Cyberpunk 2077.");
+            Console.WriteLine("You have to match the given sequence by selecting values within the matrix.");
+            Console.WriteLine("You are limited to selecting values within either a row or column, which switches after every selection.");
+            Console.WriteLine();
+            Console.WriteLine("------------------- Keys -------------------");
+            Console.WriteLine("Move: <UP> <DOWN> <LEFT> <RIGHT> arrow keys");
+            Console.WriteLine("Select: <ENTER>");
+            Console.WriteLine("Undo: <BACKSPACE>");
+            Console.WriteLine("Solve: <F1> algorithm1 <F2> algorithm2");
+            Console.WriteLine("Exit: <ESC>");
+            Console.WriteLine();
+            Console.WriteLine("------------------- Menu -------------------");
+            Console.WriteLine("1) Play Breach Protocol");
+            Console.WriteLine("2) Run Algorithm Tests");
+            Console.WriteLine("Press any other key to exit.");
         }
     }
 }
