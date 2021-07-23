@@ -240,7 +240,7 @@ namespace BreachProtocol
         {
             // Short cirtcuit since there's no way for the buffer to contain the solution sequence if it
             // doesn't have enough items.
-            if (_solution.Length < _buffer.Count)
+            if (_solution.Length > _buffer.Count)
                 return false;
 
             bool result = false;
