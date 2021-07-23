@@ -244,7 +244,7 @@ namespace BreachProtocol
             Array.Copy(fullSequence, Random.Shared.Next(fullSequence.Length - _sequence.Length), _sequence, 0, _sequence.Length);
         }
 
-        private bool IsSolved()
+        public bool IsSolved()
         {
             // Short cirtcuit since there's no way for the buffer to contain the sequence if it
             // doesn't have enough items.
