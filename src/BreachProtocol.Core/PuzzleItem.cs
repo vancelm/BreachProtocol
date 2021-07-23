@@ -2,9 +2,9 @@
 {
     internal struct PuzzleItem
     {
-        public readonly int Row;
-        public readonly int Column;
-        public readonly byte Value;
+        internal readonly int Row;
+        internal readonly int Column;
+        internal readonly byte Value;
 
         internal PuzzleItem(int row, int column, byte value)
         {
