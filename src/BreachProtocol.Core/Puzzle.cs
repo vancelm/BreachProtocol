@@ -169,7 +169,7 @@ namespace BreachProtocol
         {
             bool result = false;
 
-            for (int i = 0; i < _buffer.Count - _solution.Length; i++)
+            for (int i = 0; i <= _buffer.Count - _solution.Length; i++)
             {
                 result = true;
                 for (int j = 0; j < _solution.Length; j++)
