@@ -64,8 +64,6 @@ namespace BreachProtocol
         /// </summary>
         public ReadOnlyCollection<byte> Sequence { get; }
 
-        public bool IsSolved { get; private set; }
-
         /// <summary>
         /// Creates a new instance of <see cref="Puzzle"/>.
         /// </summary>
