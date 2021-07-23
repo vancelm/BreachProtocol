@@ -6,214 +6,230 @@ using System.Threading;
 
 namespace BreachProtocol
 {
-    class Program
+    internal static class Program
     {
-        private struct MatrixItem
-        {
-            public readonly int Row;
-            public readonly int Col;
-            public readonly byte Value;
+        private static Puzzle puzzle;
 
-            public MatrixItem(int row, int col, byte value)
-            {
-                Row = row;
-                Col = col;
-                Value = value;
-            }
+        private static void Main(string[] args)
+        {
+            PlayGame();
         }
 
-        private static readonly ImmutableArray<byte> values = ImmutableArray.Create<byte>(0x1C, 0x55, 0xBD, 0xE9, 0xFF);
-        private static readonly byte[,] matrix = new byte[6, 6];
-        private static readonly MatrixItem[] buffer = new MatrixItem[6];
-        private static int bufferSize = 0;
-        private static readonly byte[] solution = new byte[4];
-        private static readonly List<MatrixItem[]> solutions = new();
-
-        static void Main(string[] args)
+        private static void PlayGame()
         {
-            FillMatrix();
-            CreateSolution();
+            puzzle = new Puzzle(8, 8, 8, 4);
+            puzzle.Initialize();
             Print();
-            FindSolutions_BruteForce();
-            Print();
-            PrintSolutions();
-        }
 
-        private static byte GetRandomValue()
-        {
-            int index = Random.Shared.Next(values.Length);
-            return values[index];
-        }
-
-        private static void FillMatrix()
-        {
-            for (int row = 0; row < matrix.GetLength(0); row++)
+            while (true)
             {
-                for (int col = 0; col < matrix.GetLength(1); col++)
+                ConsoleKey key = Console.ReadKey(true).Key;
+                switch (key)
                 {
-                    matrix[row, col] = GetRandomValue();
+                    case ConsoleKey.UpArrow:
+                        if (puzzle.CurrentAxis == PuzzleAxis.Vertical && puzzle.CurrentRow > 0)
+                            puzzle.Move(puzzle.CurrentRow - 1, puzzle.CurrentColumn);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        if (puzzle.CurrentAxis == PuzzleAxis.Vertical && puzzle.CurrentRow < puzzle.MatrixRows - 1)
+                            puzzle.Move(puzzle.CurrentRow + 1, puzzle.CurrentColumn);
+                        break;
+                    case ConsoleKey.LeftArrow:
+                        if (puzzle.CurrentAxis == PuzzleAxis.Horizontal && puzzle.CurrentColumn > 0)
+                            puzzle.Move(puzzle.CurrentRow, puzzle.CurrentColumn - 1);
+                        break;
+                    case ConsoleKey.RightArrow:
+                        if (puzzle.CurrentAxis == PuzzleAxis.Horizontal && puzzle.CurrentColumn < puzzle.MatrixColumns - 1)
+                            puzzle.Move(puzzle.CurrentRow, puzzle.CurrentColumn + 1);
+                        break;
+                    case ConsoleKey.Enter:
+                        if (puzzle.BufferCount == puzzle.BufferCapacity)
+                        {
+                            break;
+                        }
+
+                        if (puzzle.GetMatrixValue(puzzle.CurrentRow, puzzle.CurrentColumn) != 0)
+                        {
+                            bool isWinner = puzzle.Push();
+                            Print();
+
+                            if (isWinner)
+                            {
+                                PlayerWins();
+                                return;
+                            }
+                        }
+                        break;
+                    case ConsoleKey.Backspace:
+                        if (puzzle.BufferCount > 0)
+                        {
+                            puzzle.Pop();
+                            Print();
+                        }
+                        break;
+                    case ConsoleKey.Escape:
+                        return;
+                    default:
+                        break;
                 }
+
+                SetCursorPosition();
             }
+        }
+
+        private static void PlayerWins()
+        {
+            Console.SetCursorPosition(0, puzzle.MatrixRows + 1);
+            Console.WriteLine("*********************************");
+            Console.WriteLine("* WINNER WINNER CHICKEN DINNER! *");
+            Console.WriteLine("*********************************");
+        }
+
+        private static void SetCursorPosition()
+        {
+            Console.SetCursorPosition(puzzle.CurrentColumn * 3, puzzle.CurrentRow);
         }
 
         private static void Print()
         {
-            Console.SetCursorPosition(0, 0);
-            PrintBuffer();
             PrintMatrix();
+            PrintBuffer();
+            PrintSolution();
+            SetCursorPosition();
+        }
+
+        private static void PrintSolution()
+        {
+            Console.SetCursorPosition(puzzle.MatrixColumns * 3 + 1, 2);
+            Console.Write("Sequence: ");
+            for (int i = 0; i < puzzle.Sequence.Count; i++)
+            {
+                Console.Write($"{puzzle.Sequence[i]:X2} ");
+            }
         }
 
         private static void PrintBuffer()
         {
-            Console.WriteLine("Buffer:");
-            foreach (MatrixItem item in buffer)
+            Console.SetCursorPosition(puzzle.MatrixColumns * 3 + 1, 0);
+            Console.Write("Buffer: ");
+            for (int i = 0; i < puzzle.BufferCapacity; i++)
             {
-                Console.Write($"{item.Value:X2} ");
+                if (i < puzzle.BufferCount)
+                    Console.Write($"{puzzle.GetBufferValue(i):X2} ");
+                else
+                    Console.Write("__ ");
             }
-            Console.WriteLine();
-            Console.WriteLine();
         }
 
         private static void PrintMatrix()
         {
-            Console.WriteLine("Code Matrix:");
-            for (int row = 0; row < matrix.GetLength(0); row++)
+            Console.SetCursorPosition(0, 0);
+            for (int row = 0; row < puzzle.MatrixRows; row++)
             {
-                for (int col = 0; col < matrix.GetLength(1); col++)
+                for (int col = 0; col < puzzle.MatrixColumns; col++)
                 {
-                    Console.Write($"{matrix[row, col]:X2} ");
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine();
-        }
-
-        private static void PrintSolutions()
-        {
-            Console.WriteLine("Solutions:");
-            foreach (MatrixItem[] sol in solutions.OrderBy(s => s.Length))
-            {
-                for (int i = 0; i < sol.Length; i++)
-                {
-                    Console.Write($"({sol[i].Row}, {sol[i].Col}, {sol[i].Value:X2})");
-
-                    if (i < sol.Length - 1)
+                    if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
                     {
-                        Console.Write(", ");
-                    }
-                }
-
-                Console.WriteLine();
-            }
-        }
-
-        private static void CreateSolution()
-        {
-            byte[,] tempMatrix = new byte[matrix.GetLength(0), matrix.GetLength(1)];
-            Array.Copy(matrix, tempMatrix, matrix.Length);
-
-            byte[] fullSolution = new byte[buffer.Length];
-            int row = 0;
-            int col = 0;
-            int dimension = 0;
-
-            for (int i = 0; i < fullSolution.Length; i++)
-            {
-                do
-                {
-                    if (dimension == 0)
-                    {
-                        col = Random.Shared.Next(tempMatrix.GetLength(1));
+                        if (row == puzzle.CurrentRow)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
                     }
                     else
                     {
-                        row = Random.Shared.Next(tempMatrix.GetLength(0));
+                        if (col == puzzle.CurrentColumn)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
                     }
-                } while (tempMatrix[row, col] == 0);
 
-                fullSolution[i] = tempMatrix[row, col];
-                tempMatrix[row, col] = 0;
-                dimension ^= 1;
+                    Console.Write($"{puzzle.GetMatrixValue(row, col):X2} ");
+                }
+                Console.WriteLine();
             }
-
-            Array.Copy(fullSolution, Random.Shared.Next(fullSolution.Length - solution.Length), solution, 0, solution.Length);
+            Console.ForegroundColor = ConsoleColor.White;
         }
 
-        private static bool ContainsSolution()
-        {
-            bool result = false;
+        //private static void PrintSolutions()
+        //{
+        //    Console.WriteLine("Solutions:");
+        //    foreach (MatrixItem[] sol in solutions.OrderBy(s => s.Length))
+        //    {
+        //        for (int i = 0; i < sol.Length; i++)
+        //        {
+        //            Console.Write($"({sol[i].Row}, {sol[i].Col}, {sol[i].Value:X2})");
 
-            for (int i = 0; i < buffer.Length - solution.Length; i++)
-            {
-                result = true;
-                for (int j = 0; j < solution.Length; j++)
-                {
-                    if (buffer[i + j].Value != solution[j])
-                    {
-                        result = false;
-                        break;
-                    }
-                }
+        //            if (i < sol.Length - 1)
+        //            {
+        //                Console.Write(", ");
+        //            }
+        //        }
 
-                if (result)
-                {
-                    break;
-                }
-            }
+        //        Console.WriteLine();
+        //    }
+        //}
 
-            return result;
-        }
 
-        private static void FindSolutions_BruteForce()
-        {
-            BruteForce_Recursive(0, 0, 0);
-        }
 
-        private static void BruteForce_Recursive(int row, int col, int dimension)
-        {
-            if (ContainsSolution())
-            {
-                solutions.Add(buffer.Take(bufferSize).ToArray());
-            }
 
-            if (bufferSize >= buffer.Length)
-            {
-                return;
-            }
+        //private static void FindSolutions_BruteForce()
+        //{
+        //    BruteForce_Recursive(0, 0, 0);
+        //}
 
-            if (dimension == 0)
-            {
-                col = 0;
-            }
-            else
-            {
-                row = 0;
-            }
+        //private static void BruteForce_Recursive(int row, int col, int dimension)
+        //{
+        //    if (ContainsSolution())
+        //    {
+        //        solutions.Add(buffer.Take(bufferSize).ToArray());
+        //    }
 
-            while (row < matrix.GetLength(0) && col < matrix.GetLength(1))
-            {
-                if (matrix[row, col] != 0)
-                {
-                    bufferSize++;
-                    buffer[bufferSize - 1] = new MatrixItem(row, col, matrix[row, col]);
-                    matrix[row, col] = 0;
-                    //Print();
-                    BruteForce_Recursive(row, col, dimension ^ 1);
-                    matrix[row, col] = buffer[bufferSize - 1].Value;
-                    buffer[bufferSize - 1] = default;
-                    bufferSize--;
-                }
+        //    if (bufferSize >= buffer.Length)
+        //    {
+        //        return;
+        //    }
 
-                if (dimension == 0)
-                {
-                    col++;
-                }
-                else
-                {
-                    row++;
-                }
-            }
-        }
+        //    if (dimension == 0)
+        //    {
+        //        col = 0;
+        //    }
+        //    else
+        //    {
+        //        row = 0;
+        //    }
+
+        //    while (row < matrix.GetLength(0) && col < matrix.GetLength(1))
+        //    {
+        //        if (matrix[row, col] != 0)
+        //        {
+        //            bufferSize++;
+        //            buffer[bufferSize - 1] = new MatrixItem(row, col, matrix[row, col]);
+        //            matrix[row, col] = 0;
+        //            //Print();
+        //            BruteForce_Recursive(row, col, dimension ^ 1);
+        //            matrix[row, col] = buffer[bufferSize - 1].Value;
+        //            buffer[bufferSize - 1] = default;
+        //            bufferSize--;
+        //        }
+
+        //        if (dimension == 0)
+        //        {
+        //            col++;
+        //        }
+        //        else
+        //        {
+        //            row++;
+        //        }
+        //    }
+        //}
 
         //private static void FindSolutions()
         //{
