@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace BreachProtocol
 {
@@ -23,9 +24,16 @@ namespace BreachProtocol
 
         private static void PlayGame()
         {
-            Puzzle puzzle = new Puzzle(8, 8, 8, 4);
+            Puzzle puzzle = new(8, 8, 8, 4);
             puzzle.Initialize();
+            PlayGame(puzzle);
+        }
+
+        private static void PlayGame(Puzzle puzzle)
+        {
             PrintPuzzle(puzzle);
+
+            bool solved = false;
 
             while (true)
             {
@@ -56,14 +64,8 @@ namespace BreachProtocol
 
                         if (puzzle.GetMatrixValue(puzzle.CurrentRow, puzzle.CurrentColumn) != 0)
                         {
-                            bool isWinner = puzzle.Push();
+                            solved = puzzle.Push();
                             PrintPuzzle(puzzle);
-
-                            if (isWinner)
-                            {
-                                PlayerWins(puzzle);
-                                return;
-                            }
                         }
                         break;
                     case ConsoleKey.Backspace:
@@ -73,11 +75,22 @@ namespace BreachProtocol
                             PrintPuzzle(puzzle);
                         }
                         break;
+                    case ConsoleKey.F1:
+                        solved = Solve_BruteForce(puzzle);
+                        PrintPuzzle(puzzle);
+                        break;
+                    case ConsoleKey.F2:
+                        solved = Solve_BetterButUgly(puzzle);
+                        PrintPuzzle(puzzle);
+                        break;
                     case ConsoleKey.Escape:
                         return;
                     default:
                         break;
                 }
+
+                if (solved)
+                    PlayerWins(puzzle);
 
                 SetCursorPosition(puzzle);
             }
@@ -166,115 +179,142 @@ namespace BreachProtocol
 
         private static void TestAlgorithms()
         {
+            int iterations = 100;
 
+            for (int size = 2; size < 20; size++)
+            {
+                Puzzle puzzle = new(size, size, size, size / 2);
+                double totalElapsed1 = 0;
+                double minElapsed1 = double.MaxValue;
+                double maxElapsed1 = 0;
+                double totalElapsed2 = 0;
+                double minElapsed2 = double.MaxValue;
+                double maxElapsed2 = 0;
+                for (int i = 0; i < iterations; i++)
+                {
+                    puzzle.Initialize();
+                    double elapsed1 = TimeAlgorithm(() =>
+                    {
+                        Solve_BruteForce(puzzle);
+                    });
+                    totalElapsed1 += elapsed1;
+                    minElapsed1 = Math.Min(minElapsed1, elapsed1);
+                    maxElapsed1 = Math.Max(maxElapsed1, elapsed1);
+
+                    puzzle.Reset();
+                    double elapsed2 = TimeAlgorithm(() =>
+                    {
+                        Solve_BetterButUgly(puzzle, 0);
+                    });
+                    totalElapsed2 += elapsed2;
+                    minElapsed2 = Math.Min(minElapsed2, elapsed2);
+                    maxElapsed2 = Math.Max(maxElapsed2, elapsed2);
+                }
+
+                double avgElapsed1 = totalElapsed1 / iterations;
+                double avgElapsed2 = totalElapsed2 / iterations;
+                Console.Write($"{size,2}, {totalElapsed1,8:0.00}, {minElapsed1,8:0.00}, {maxElapsed1,8:0.00}, {avgElapsed1,8:0.00}, ");
+                Console.WriteLine($"{totalElapsed2,8:0.00}, {minElapsed2,8:0.00}, {maxElapsed2,8:0.00}, {avgElapsed2,8:0.00}");
+            }
         }
 
+        private static double TimeAlgorithm(Action action)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            action();
+            stopwatch.Stop();
+            return stopwatch.Elapsed.TotalMilliseconds;
+        }
 
+        private static bool Solve_BruteForce(Puzzle puzzle)
+        {
+            if (puzzle.BufferCount == puzzle.BufferCapacity)
+                return false;
 
-        //private static void PrintSolutions()
-        //{
-        //    Console.WriteLine("Solutions:");
-        //    foreach (MatrixItem[] sol in solutions.OrderBy(s => s.Length))
-        //    {
-        //        for (int i = 0; i < sol.Length; i++)
-        //        {
-        //            Console.Write($"({sol[i].Row}, {sol[i].Col}, {sol[i].Value:X2})");
+            if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
+                puzzle.Move(puzzle.CurrentRow, 0);
+            else
+                puzzle.Move(0, puzzle.CurrentColumn);
 
-        //            if (i < sol.Length - 1)
-        //            {
-        //                Console.Write(", ");
-        //            }
-        //        }
+            while (puzzle.CurrentRow < puzzle.MatrixRows && puzzle.CurrentColumn < puzzle.MatrixColumns)
+            {
+                if (puzzle.GetMatrixValue(puzzle.CurrentRow, puzzle.CurrentColumn) != 0)
+                {
+                    if (puzzle.Push())
+                        return true;
+                    if (Solve_BruteForce(puzzle))
+                        return true;
+                    puzzle.Pop();
+                }
 
-        //        Console.WriteLine();
-        //    }
-        //}
+                if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
+                    puzzle.Move(puzzle.CurrentRow, puzzle.CurrentColumn + 1);
+                else
+                    puzzle.Move(puzzle.CurrentRow + 1, puzzle.CurrentColumn);
+            }
 
+            return false;
+        }
 
+        private static bool Solve_BetterButUgly(Puzzle puzzle, int index = 0)
+        {
+            if (puzzle.BufferCount == puzzle.BufferCapacity)
+                return false;
 
+            if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
+                puzzle.Move(puzzle.CurrentRow, 0);
+            else
+                puzzle.Move(0, puzzle.CurrentColumn);
 
-        //private static void FindSolutions_BruteForce()
-        //{
-        //    BruteForce_Recursive(0, 0, 0);
-        //}
+            // First limit searching to just the next sequence value
+            while (puzzle.CurrentRow < puzzle.MatrixRows && puzzle.CurrentColumn < puzzle.MatrixColumns)
+            {
+                byte value = puzzle.GetMatrixValue(puzzle.CurrentRow, puzzle.CurrentColumn);
+                if (value == puzzle.Sequence[index])
+                {
+                    if (puzzle.Push())
+                        return true;
+                    if (Solve_BetterButUgly(puzzle, index + 1))
+                        return true;
+                    puzzle.Pop();
+                }
 
-        //private static void BruteForce_Recursive(int row, int col, int dimension)
-        //{
-        //    if (ContainsSolution())
-        //    {
-        //        solutions.Add(buffer.Take(bufferSize).ToArray());
-        //    }
+                if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
+                    puzzle.Move(puzzle.CurrentRow, puzzle.CurrentColumn + 1);
+                else
+                    puzzle.Move(puzzle.CurrentRow + 1, puzzle.CurrentColumn);
+            }
 
-        //    if (bufferSize >= buffer.Length)
-        //    {
-        //        return;
-        //    }
+            // Now we have to dig deeper so exclude 0's and also sequence value since we already checked those
+            // We only do this if we haven't already found the start of the sequence
 
-        //    if (dimension == 0)
-        //    {
-        //        col = 0;
-        //    }
-        //    else
-        //    {
-        //        row = 0;
-        //    }
+            if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
+                puzzle.Move(puzzle.CurrentRow, 0);
+            else
+                puzzle.Move(0, puzzle.CurrentColumn);
 
-        //    while (row < matrix.GetLength(0) && col < matrix.GetLength(1))
-        //    {
-        //        if (matrix[row, col] != 0)
-        //        {
-        //            bufferSize++;
-        //            buffer[bufferSize - 1] = new MatrixItem(row, col, matrix[row, col]);
-        //            matrix[row, col] = 0;
-        //            //Print();
-        //            BruteForce_Recursive(row, col, dimension ^ 1);
-        //            matrix[row, col] = buffer[bufferSize - 1].Value;
-        //            buffer[bufferSize - 1] = default;
-        //            bufferSize--;
-        //        }
+            if (index == 0)
+            {
+                while (puzzle.CurrentRow < puzzle.MatrixRows && puzzle.CurrentColumn < puzzle.MatrixColumns)
+                {
+                    byte value = puzzle.GetMatrixValue(puzzle.CurrentRow, puzzle.CurrentColumn);
+                    if (value != 0 && value != puzzle.Sequence[index])
+                    {
+                        if (puzzle.Push())
+                            return true; // Won't happen lol
+                        if (Solve_BetterButUgly(puzzle, index))
+                            return true; // This can still happen
+                        puzzle.Pop();
+                    }
 
-        //        if (dimension == 0)
-        //        {
-        //            col++;
-        //        }
-        //        else
-        //        {
-        //            row++;
-        //        }
-        //    }
-        //}
+                    if (puzzle.CurrentAxis == PuzzleAxis.Horizontal)
+                        puzzle.Move(puzzle.CurrentRow, puzzle.CurrentColumn + 1);
+                    else
+                        puzzle.Move(puzzle.CurrentRow + 1, puzzle.CurrentColumn);
+                }
+            }
 
-        //private static void FindSolutions()
-        //{
-        //    int index = solution.Length - 1;
-        //    for (int row = 0; row < matrix.GetLength(0); row++)
-        //    {
-        //        for (int col = 0; col < matrix.GetLength(1); col++)
-        //        {
-        //            if (matrix[row, col] == solution[index])
-        //            {
-        //                buffer[]
-        //                FindSolutions_Recursive(index, row, col, 0);
-        //                FindSolutions_Recursive(index, row, col, 1);
-        //            }
-        //        }
-        //    }
-        //}
-
-        //private static void FindSolutions_Recursive(int index, int row, int col, int dimension)
-        //{
-        //    if (index <= 0)
-        //    {
-        //        return;
-        //    }
-
-        //    index--;
-
-        //    while (row < matrix.GetLength(0) && col < matrix.GetLength(1))
-        //    {
-        //        if (matrix[row, col] == )
-        //    }
-
-        //}
+            return false;
+        }
     }
 }
