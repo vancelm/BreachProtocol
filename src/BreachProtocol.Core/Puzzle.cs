@@ -17,7 +17,7 @@ namespace BreachProtocol
 
         private readonly ArrayStack<PuzzleItem> _buffer;
         private readonly byte[,] _matrix;
-        private readonly byte[] _solution;
+        private readonly byte[] _sequence;
 
         /// <summary>
         /// Gets the maximum number of elements that can be stored in the buffer.
@@ -70,8 +70,8 @@ namespace BreachProtocol
         /// <param name="rows">The number or rows in the matrix.</param>
         /// <param name="columns">The number of columns in the matrix.</param>
         /// <param name="bufferCapacity">The capacity of the buffer.</param>
-        /// <param name="solutionLength">The length of the solution.</param>
-        public Puzzle(int rows, int columns, int bufferCapacity, int solutionLength)
+        /// <param name="sequenceLength">The length of the sequence.</param>
+        public Puzzle(int rows, int columns, int bufferCapacity, int sequenceLength)
         {
             if (rows < 0)
                 throw new ArgumentOutOfRangeException(nameof(rows));
@@ -79,13 +79,13 @@ namespace BreachProtocol
                 throw new ArgumentOutOfRangeException(nameof(columns));
             if (bufferCapacity < 0)
                 throw new ArgumentOutOfRangeException(nameof(bufferCapacity));
-            if (solutionLength < 0 || solutionLength > bufferCapacity)
-                throw new ArgumentOutOfRangeException(nameof(solutionLength));
+            if (sequenceLength < 0 || sequenceLength > bufferCapacity)
+                throw new ArgumentOutOfRangeException(nameof(sequenceLength));
 
             _buffer = new(bufferCapacity);
             _matrix = new byte[rows, columns];
-            _solution = new byte[solutionLength];
-            Sequence = new ReadOnlyCollection<byte>(_solution);
+            _sequence = new byte[sequenceLength];
+            Sequence = new ReadOnlyCollection<byte>(_sequence);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace BreachProtocol
         /// <summary>
         /// Removes a value from the matrix at the current row and column and pushes it onto the buffer.
         /// </summary>
-        /// <returns>Returns true if the buffer contains the solution. Otherwise returns false.</returns>
+        /// <returns>Returns true if the buffer contains the sequence. Otherwise returns false.</returns>
         public bool Push()
         {
             if (_buffer.Count == _buffer.Capacity)
@@ -132,7 +132,7 @@ namespace BreachProtocol
             _matrix[CurrentRow, CurrentColumn] = 0;
             CurrentAxis = SwitchAxis(CurrentAxis);
 
-            return ContainsSolution();
+            return ContainsSequence();
         }
 
         /// <summary>
@@ -173,14 +173,14 @@ namespace BreachProtocol
         }
 
         /// <summary>
-        /// Initializes the puzzle with a random matrix, clears the buffer, generates a new solution, resets
+        /// Initializes the puzzle with a random matrix, clears the buffer, generates a new sequence, resets
         /// the current row and column to zero, and resets the axis to horizontal.
         /// </summary>
         public void Initialize()
         {
             _buffer.Clear();
             FillMatrix();
-            CreateSolution();
+            CreateSequence();
 
             CurrentRow = 0;
             CurrentColumn = 0;
@@ -208,17 +208,17 @@ namespace BreachProtocol
             return ValidValues[index];
         }
 
-        private void CreateSolution()
+        private void CreateSequence()
         {
             byte[,] matrix = new byte[MatrixRows, MatrixColumns];
             Array.Copy(_matrix, matrix, matrix.Length);
 
-            byte[] fullSolution = new byte[BufferCapacity];
+            byte[] fullSequence = new byte[BufferCapacity];
             int row = 0;
             int col = 0;
             PuzzleAxis axis = PuzzleAxis.Horizontal;
 
-            for (int i = 0; i < fullSolution.Length; i++)
+            for (int i = 0; i < fullSequence.Length; i++)
             {
                 do
                 {
@@ -228,28 +228,28 @@ namespace BreachProtocol
                         row = Random.Shared.Next(MatrixRows);
                 } while (matrix[row, col] == 0);
 
-                fullSolution[i] = matrix[row, col];
+                fullSequence[i] = matrix[row, col];
                 matrix[row, col] = 0;
                 axis = SwitchAxis(axis);
             }
 
-            Array.Copy(fullSolution, Random.Shared.Next(fullSolution.Length - _solution.Length), _solution, 0, _solution.Length);
+            Array.Copy(fullSequence, Random.Shared.Next(fullSequence.Length - _sequence.Length), _sequence, 0, _sequence.Length);
         }
 
-        private bool ContainsSolution()
+        private bool ContainsSequence()
         {
-            // Short cirtcuit since there's no way for the buffer to contain the solution sequence if it
+            // Short cirtcuit since there's no way for the buffer to contain the sequence if it
             // doesn't have enough items.
-            if (_solution.Length > _buffer.Count)
+            if (_sequence.Length > _buffer.Count)
                 return false;
 
             bool result = false;
-            for (int i = 0; i <= _buffer.Count - _solution.Length; i++)
+            for (int i = 0; i <= _buffer.Count - _sequence.Length; i++)
             {
                 result = true;
-                for (int j = 0; j < _solution.Length; j++)
+                for (int j = 0; j < _sequence.Length; j++)
                 {
-                    if (_buffer[i + j].Value != _solution[j])
+                    if (_buffer[i + j].Value != _sequence[j])
                     {
                         result = false;
                         break;
