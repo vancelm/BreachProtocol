@@ -64,6 +64,8 @@ namespace BreachProtocol
         /// </summary>
         public ReadOnlyCollection<byte> Sequence { get; }
 
+        public bool IsSolved { get; private set; }
+
         /// <summary>
         /// Creates a new instance of <see cref="Puzzle"/>.
         /// </summary>
@@ -132,7 +134,7 @@ namespace BreachProtocol
             _matrix[CurrentRow, CurrentColumn] = 0;
             CurrentAxis = SwitchAxis(CurrentAxis);
 
-            return ContainsSequence();
+            return IsSolved();
         }
 
         /// <summary>
@@ -187,6 +189,14 @@ namespace BreachProtocol
             CurrentAxis = PuzzleAxis.Horizontal;
         }
 
+        public void Reset()
+        {
+            while (BufferCount > 0)
+            {
+                Pop();
+            }
+        }
+
         private void FillMatrix()
         {
             for (int row = 0; row < MatrixRows; row++)
@@ -236,7 +246,7 @@ namespace BreachProtocol
             Array.Copy(fullSequence, Random.Shared.Next(fullSequence.Length - _sequence.Length), _sequence, 0, _sequence.Length);
         }
 
-        private bool ContainsSequence()
+        private bool IsSolved()
         {
             // Short cirtcuit since there's no way for the buffer to contain the sequence if it
             // doesn't have enough items.
